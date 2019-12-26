@@ -37,11 +37,12 @@ func New(baseURL, userAgent string, httpClient *http.Client) (*Client, error) {
 	return &Client{BaseURL: u, UserAgent: userAgent, httpClient: httpClient}, nil
 }
 
-// ReplaceHTTPClient replace http client and return the old one.
-func (c *Client) ReplaceHTTPClient(client *http.Client) *http.Client {
-	old := c.httpClient
-	c.httpClient = client
-	return old
+// Copy a new Client with http client.
+func (c *Client) Copy(httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
+	return &Client{BaseURL: c.BaseURL, UserAgent: c.UserAgent, httpClient: httpClient}
 }
 
 // NewRequest creates an json API request. A relative URL can be provided in urlStr,
