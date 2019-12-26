@@ -48,7 +48,7 @@ func (c *Client) Copy(httpClient *http.Client) *Client {
 // NewRequest creates an json API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified with a preceding slash.
-func (c *Client) NewRequest(method, urlStr string, params map[string]string, body interface{}) (*http.Request, error) {
+func (c *Client) NewRequest(ctx context.Context, method, urlStr string, params map[string]string, body interface{}) (*http.Request, error) {
 	if !strings.HasPrefix(urlStr, "/") {
 		return nil, fmt.Errorf("httpx new request error: url must have a preceding slash, but %q does not", urlStr)
 	}
@@ -71,7 +71,7 @@ func (c *Client) NewRequest(method, urlStr string, params map[string]string, bod
 			return nil, fmt.Errorf("httpx new request error: %w", err)
 		}
 	}
-	req, err := http.NewRequest(method, u.String(), buf)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), buf)
 	if err != nil {
 		return nil, fmt.Errorf("httpx new request error: %w", err)
 	}
@@ -86,7 +86,7 @@ func (c *Client) NewRequest(method, urlStr string, params map[string]string, bod
 // NewMultiPartRequest creates an multi-part API request. A relative URL can be provided in urlStr,
 // in which case it is resolved relative to the BaseURL of the Client.
 // Relative URLs should always be specified with a preceding slash.
-func (c *Client) NewMultiPartRequest(method, urlStr string, body io.Reader, contentType string) (*http.Request, error) {
+func (c *Client) NewMultiPartRequest(ctx context.Context, method, urlStr string, body io.Reader, contentType string) (*http.Request, error) {
 	if body == nil {
 		return nil, errors.New("httpx new multi part request error: expected not nil body")
 	}
@@ -98,7 +98,7 @@ func (c *Client) NewMultiPartRequest(method, urlStr string, body io.Reader, cont
 		return nil, fmt.Errorf("httpx new multi part request error: %w", err)
 	}
 
-	req, err := http.NewRequest(method, u.String(), body)
+	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
 	if err != nil {
 		return nil, fmt.Errorf("httpx new multi part request error: %w", err)
 	}
@@ -130,11 +130,12 @@ func (r *Response) Error() string {
 // first decode it.
 // The provided ctx must be non-nil. If it is canceled or times out,
 // ctx.Err() will be returned.
-func (c *Client) Do(ctx context.Context, req *http.Request, v interface{}) (*Response, error) {
+func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 	if v == nil {
 		return nil, errors.New("v must not nil")
 	}
 
+	ctx := req.Context()
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		// If we got an error, and the context has been canceled,
