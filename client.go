@@ -131,9 +131,6 @@ func (r *Response) Error() string {
 // The provided ctx must be non-nil. If it is canceled or times out,
 // ctx.Err() will be returned.
 func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
-	if v == nil {
-		return nil, errors.New("v must not nil")
-	}
 
 	ctx := req.Context()
 	resp, err := c.httpClient.Do(req)
@@ -159,6 +156,10 @@ func (c *Client) Do(req *http.Request, v interface{}) (*Response, error) {
 		response.ErrMessage = string(body)
 		// return response as error
 		return nil, response
+	}
+
+	if v == nil {
+		return response, nil
 	}
 
 	if w, ok := v.(io.Writer); ok {
